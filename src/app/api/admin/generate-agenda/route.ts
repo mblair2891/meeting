@@ -1,15 +1,10 @@
 import { NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { getDb, initDb } from "@/lib/db";
+import { isAdminAuthenticated } from "@/lib/auth";
 
-function checkAuth(request: Request): boolean {
-  const authHeader = request.headers.get("authorization");
-  if (!authHeader) return false;
-  return authHeader === `Bearer ${process.env.ADMIN_PASSWORD}`;
-}
-
-export async function POST(request: Request) {
-  if (!checkAuth(request)) {
+export async function POST() {
+  if (!(await isAdminAuthenticated())) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -43,17 +38,7 @@ export async function POST(request: Request) {
     const message = await client.messages.create({
       model: "claude-sonnet-4-20250514",
       max_tokens: 4096,
-      system: `You are a meeting agenda organizer for a bar/restaurant team. Create a well-structured meeting agenda from the submitted topics.
-
-Your agenda should:
-1. Group related topics into categories (e.g., Operations, Staffing, Customer Experience, Training, Finance)
-2. Prioritize urgent/high-impact items first
-3. Estimate time needed for each topic (in minutes)
-4. Include a brief discussion prompt for each item
-5. Add an opening (welcome/check-in) and closing (action items/next steps) section
-6. Keep the total meeting time reasonable (45-90 minutes)
-
-Format the agenda clearly with headers, bullet points, and time estimates. Make it professional but approachable for a restaurant/bar team setting.`,
+      system: "You are a professional meeting facilitator. Organize the following topics into a well-structured meeting agenda. Group related topics, prioritize by urgency/impact, add estimated time for each item (in minutes), and provide brief notes on discussion points. Format as a clear, actionable agenda.",
       messages: [
         {
           role: "user",

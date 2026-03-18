@@ -1,14 +1,9 @@
 import { NextResponse } from "next/server";
 import { getDb, initDb } from "@/lib/db";
+import { isAdminAuthenticated } from "@/lib/auth";
 
-function checkAuth(request: Request): boolean {
-  const authHeader = request.headers.get("authorization");
-  if (!authHeader) return false;
-  return authHeader === `Bearer ${process.env.ADMIN_PASSWORD}`;
-}
-
-export async function GET(request: Request) {
-  if (!checkAuth(request)) {
+export async function GET() {
+  if (!(await isAdminAuthenticated())) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -24,7 +19,7 @@ export async function GET(request: Request) {
 }
 
 export async function DELETE(request: Request) {
-  if (!checkAuth(request)) {
+  if (!(await isAdminAuthenticated())) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -40,7 +35,7 @@ export async function DELETE(request: Request) {
 }
 
 export async function PUT(request: Request) {
-  if (!checkAuth(request)) {
+  if (!(await isAdminAuthenticated())) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { setAdminSession, clearAdminSession, isAdminAuthenticated } from "@/lib/auth";
 
 export async function POST(request: Request) {
   try {
@@ -10,6 +11,7 @@ export async function POST(request: Request) {
     }
 
     if (password === adminPassword) {
+      await setAdminSession();
       return NextResponse.json({ success: true });
     }
 
@@ -17,4 +19,14 @@ export async function POST(request: Request) {
   } catch {
     return NextResponse.json({ error: "Invalid request" }, { status: 400 });
   }
+}
+
+export async function GET() {
+  const authenticated = await isAdminAuthenticated();
+  return NextResponse.json({ authenticated });
+}
+
+export async function DELETE() {
+  await clearAdminSession();
+  return NextResponse.json({ success: true });
 }
