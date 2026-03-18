@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 
 export default function SubmitPage() {
   const [name, setName] = useState("");
@@ -200,9 +201,17 @@ export default function SubmitPage() {
           </button>
         </form>
 
-        <p className="text-center text-xs text-gray-400 mt-6">
-          All submissions are anonymous unless you choose to include your name.
-        </p>
+        <div className="flex items-center justify-between mt-6 px-1">
+          <p className="text-xs text-gray-400">
+            All submissions are anonymous unless you choose to include your name.
+          </p>
+          <Link
+            href="/admin/login"
+            className="text-xs text-gray-400 hover:text-indigo-600 transition-colors flex-shrink-0 ml-4"
+          >
+            Admin
+          </Link>
+        </div>
       </div>
     </main>
   );
