@@ -1,9 +1,9 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
 import { getDb, initDb } from "@/lib/db";
 import { isAdminAuthenticated } from "@/lib/auth";
 
-export async function POST() {
+export async function POST(request: NextRequest) {
   if (!(await isAdminAuthenticated())) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -13,6 +13,9 @@ export async function POST() {
     if (!apiKey) {
       return NextResponse.json({ error: "OpenAI API key not configured" }, { status: 500 });
     }
+
+    const body = await request.json();
+    const { meetingDate, meetingTime, meetingLocation } = body;
 
     await initDb();
     const sql = getDb();
@@ -33,6 +36,15 @@ export async function POST() {
       })
       .join("\n\n");
 
+    let meetingDetails = "";
+    if (meetingDate || meetingTime || meetingLocation) {
+      const parts = [];
+      if (meetingDate) parts.push(`Date: ${meetingDate}`);
+      if (meetingTime) parts.push(`Time: ${meetingTime}`);
+      if (meetingLocation) parts.push(`Location: ${meetingLocation}`);
+      meetingDetails = `\n\nMeeting Details:\n${parts.join("\n")}`;
+    }
+
     const client = new OpenAI({ apiKey });
 
     const completion = await client.chat.completions.create({
@@ -41,11 +53,22 @@ export async function POST() {
       messages: [
         {
           role: "system",
-          content: "You are a professional meeting facilitator. Organize the following topics into a well-structured meeting agenda. Group related topics, prioritize by urgency/impact, add estimated time for each item (in minutes), and provide brief notes on discussion points. Format as a clear, actionable agenda.",
+          content: `You are a thoughtful and experienced meeting facilitator. Your job is to take submitted team topics and turn them into a well-organized meeting agenda that feels natural and easy to follow — not a rigid outline full of bullet points.
+
+Write in a warm, conversational tone as if you're a colleague preparing the team for a productive discussion. Use full sentences and flowing paragraphs rather than bullet-point lists.
+
+For each topic or group of related topics, include:
+- A brief summary of what was raised and why it matters
+- Possible solutions or approaches the team could consider, drawing from what submitters suggested and your own practical ideas
+- A clear action plan with suggested next steps, owners where possible, and realistic timeframes
+
+Group related topics together naturally. Prioritize items by urgency and impact. Include estimated discussion time for each section.
+
+Start the agenda with a short welcome and overview, and end with a wrap-up section that includes any follow-up actions.`,
         },
         {
           role: "user",
-          content: `Here are the submitted topics for our next team meeting:\n\n${topicSummary}\n\nPlease create an organized meeting agenda.`,
+          content: `Here are the submitted topics for our upcoming team meeting:\n\n${topicSummary}${meetingDetails}\n\nPlease create an organized, conversational meeting agenda with possible solutions and an action plan for each topic.`,
         },
       ],
     });
