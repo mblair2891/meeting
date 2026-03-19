@@ -26,6 +26,10 @@ export default function AdminPage() {
   const [generatingAgenda, setGeneratingAgenda] = useState(false);
   const [agendaError, setAgendaError] = useState("");
   const [copied, setCopied] = useState(false);
+  const [showMeetingModal, setShowMeetingModal] = useState(false);
+  const [meetingDate, setMeetingDate] = useState("");
+  const [meetingTime, setMeetingTime] = useState("");
+  const [meetingLocation, setMeetingLocation] = useState("");
 
   // Check session on load
   useEffect(() => {
@@ -109,12 +113,25 @@ export default function AdminPage() {
     }
   }
 
+  function handleGenerateClick() {
+    setShowMeetingModal(true);
+  }
+
   async function generateAgenda() {
+    setShowMeetingModal(false);
     setGeneratingAgenda(true);
     setAgendaError("");
     setAgenda("");
     try {
-      const res = await fetch("/api/admin/generate-agenda", { method: "POST" });
+      const res = await fetch("/api/admin/generate-agenda", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          meetingDate,
+          meetingTime,
+          meetingLocation,
+        }),
+      });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
       setAgenda(data.agenda);
@@ -224,7 +241,7 @@ export default function AdminPage() {
               </p>
             </div>
             <button
-              onClick={generateAgenda}
+              onClick={handleGenerateClick}
               disabled={generatingAgenda || topics.length === 0}
               className="flex-shrink-0 bg-white text-indigo-700 px-8 py-3.5 rounded-xl font-bold text-lg hover:bg-indigo-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
             >
@@ -269,7 +286,7 @@ export default function AdminPage() {
                     Download PDF
                   </button>
                   <button
-                    onClick={generateAgenda}
+                    onClick={handleGenerateClick}
                     disabled={generatingAgenda}
                     className="inline-flex items-center gap-1.5 px-4 py-2 text-sm border border-indigo-300 text-indigo-700 rounded-lg hover:bg-indigo-50 transition-colors font-medium disabled:opacity-50"
                   >
@@ -449,6 +466,60 @@ export default function AdminPage() {
           </div>
         )}
       </div>
+
+      {/* Meeting Details Modal */}
+      {showMeetingModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6">
+            <h3 className="text-lg font-bold text-gray-900 mb-1">Meeting Details</h3>
+            <p className="text-sm text-gray-500 mb-5">Enter the meeting info to include in the agenda.</p>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
+                <input
+                  type="date"
+                  value={meetingDate}
+                  onChange={(e) => setMeetingDate(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Time</label>
+                <input
+                  type="time"
+                  value={meetingTime}
+                  onChange={(e) => setMeetingTime(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
+                <input
+                  type="text"
+                  value={meetingLocation}
+                  onChange={(e) => setMeetingLocation(e.target.value)}
+                  placeholder="e.g. Conference Room A, Zoom, etc."
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+                />
+              </div>
+            </div>
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={() => setShowMeetingModal(false)}
+                className="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={generateAgenda}
+                className="flex-1 px-4 py-2.5 bg-indigo-600 text-white rounded-lg text-sm font-bold hover:bg-indigo-700 transition-colors"
+              >
+                Generate
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
