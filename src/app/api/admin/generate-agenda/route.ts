@@ -52,7 +52,8 @@ export async function POST() {
 
     return NextResponse.json({ agenda: agendaText });
   } catch (error) {
-    console.error("Error generating agenda:", error);
-    return NextResponse.json({ error: "Failed to generate agenda" }, { status: 500 });
+    const message = error instanceof Error ? error.message : String(error);
+    console.error("Error generating agenda:", message);
+    return NextResponse.json({ error: `Failed to generate agenda: ${message}` }, { status: 500 });
   }
 }
