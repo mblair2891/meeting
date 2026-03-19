@@ -36,7 +36,7 @@ export async function POST() {
     const client = new Anthropic({ apiKey });
 
     const message = await client.messages.create({
-      model: "claude-sonnet-4-20250514",
+      model: "claude-sonnet-4-6-20250514",
       max_tokens: 4096,
       system: "You are a professional meeting facilitator. Organize the following topics into a well-structured meeting agenda. Group related topics, prioritize by urgency/impact, add estimated time for each item (in minutes), and provide brief notes on discussion points. Format as a clear, actionable agenda.",
       messages: [
