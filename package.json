@@ -9,10 +9,10 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.80.0",
     "@neondatabase/serverless": "^0.10.4",
     "jspdf": "^4.2.1",
     "next": "^15.1.0",
+    "openai": "^6.32.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },
