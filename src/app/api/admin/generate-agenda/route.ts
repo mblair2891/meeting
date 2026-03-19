@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import Anthropic from "@anthropic-ai/sdk";
+import OpenAI from "openai";
 import { getDb, initDb } from "@/lib/db";
 import { isAdminAuthenticated } from "@/lib/auth";
 
@@ -9,9 +9,9 @@ export async function POST() {
   }
 
   try {
-    const apiKey = process.env.CLAUDE_API_KEY;
+    const apiKey = process.env.OPENAI_API_KEY;
     if (!apiKey) {
-      return NextResponse.json({ error: "Claude API key not configured" }, { status: 500 });
+      return NextResponse.json({ error: "OpenAI API key not configured" }, { status: 500 });
     }
 
     await initDb();
@@ -33,13 +33,16 @@ export async function POST() {
       })
       .join("\n\n");
 
-    const client = new Anthropic({ apiKey });
+    const client = new OpenAI({ apiKey });
 
-    const message = await client.messages.create({
-      model: "claude-sonnet-4-6-20250514",
+    const completion = await client.chat.completions.create({
+      model: "gpt-4o",
       max_tokens: 4096,
-      system: "You are a professional meeting facilitator. Organize the following topics into a well-structured meeting agenda. Group related topics, prioritize by urgency/impact, add estimated time for each item (in minutes), and provide brief notes on discussion points. Format as a clear, actionable agenda.",
       messages: [
+        {
+          role: "system",
+          content: "You are a professional meeting facilitator. Organize the following topics into a well-structured meeting agenda. Group related topics, prioritize by urgency/impact, add estimated time for each item (in minutes), and provide brief notes on discussion points. Format as a clear, actionable agenda.",
+        },
         {
           role: "user",
           content: `Here are the submitted topics for our next team meeting:\n\n${topicSummary}\n\nPlease create an organized meeting agenda.`,
@@ -47,8 +50,7 @@ export async function POST() {
       ],
     });
 
-    const agendaText =
-      message.content[0].type === "text" ? message.content[0].text : "Failed to generate agenda";
+    const agendaText = completion.choices[0]?.message?.content ?? "Failed to generate agenda";
 
     return NextResponse.json({ agenda: agendaText });
   } catch (error) {
