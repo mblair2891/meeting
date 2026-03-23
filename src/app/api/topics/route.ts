@@ -1,6 +1,31 @@
 import { NextResponse } from "next/server";
 import { getDb, initDb } from "@/lib/db";
 
+export async function GET() {
+  try {
+    await initDb();
+    const sql = getDb();
+    const topics = await sql`SELECT id, name, topic_title, question_1_response, question_2_response, question_3_response, upvotes, created_at FROM topics ORDER BY created_at DESC`;
+    const comments = await sql`SELECT id, topic_id, author, body, created_at FROM comments ORDER BY created_at ASC`;
+
+    const commentsByTopic: Record<number, typeof comments> = {};
+    for (const c of comments) {
+      if (!commentsByTopic[c.topic_id]) commentsByTopic[c.topic_id] = [];
+      commentsByTopic[c.topic_id].push(c);
+    }
+
+    const topicsWithComments = topics.map((t) => ({
+      ...t,
+      comments: commentsByTopic[t.id] || [],
+    }));
+
+    return NextResponse.json({ topics: topicsWithComments });
+  } catch (error) {
+    console.error("Error fetching topics:", error);
+    return NextResponse.json({ error: "Failed to fetch topics" }, { status: 500 });
+  }
+}
+
 export async function POST(request: Request) {
   try {
     const body = await request.json();
